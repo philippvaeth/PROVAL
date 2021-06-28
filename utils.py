@@ -1,4 +1,5 @@
 import collections
+import multiprocessing
 import os
 import re
 import sys
@@ -8,6 +9,7 @@ import torch
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from sklearn.model_selection import train_test_split
 
 
 def downloadGDriveFile(fileID, fileName):
@@ -82,7 +84,8 @@ def loadtomatrix(file, n, mode="BLAST"):
 
 
 def is_symmetric(a, rtol=1e-05, atol=1e-08):
-    #return np.allclose(a, a.T, rtol=rtol, atol=atol)
+    #return np.allclose(a, a.T, rtol=rtol, atol=atol
+    a = torch.from_numpy(a)
     return bool(torch.all(a.T == a))
 
 def is_psd(matrix):
@@ -103,9 +106,9 @@ def truncatedSimilarityMatrix_SVD(matrix, dim):
 
 def train_test_split_sim(sim_matrix,y, test_size):
   train_idx = int(len(sim_matrix[0])*(1-test_size))
-  X_train, X_test, y_train, y_test = train_test_split(sim_matrix, y, float(test_size))
+  X_train, X_test, y_train, y_test = train_test_split(sim_matrix, y, test_size=test_size)
   #test_idx = len(sim_matrix[0])*(split)
-  print(train_idx)
+  #print(train_idx)
   return X_train[:,:train_idx],X_test[:,:train_idx], y_train, y_test 
 
 def make_psd(matrix):
@@ -167,3 +170,132 @@ def sim2dis(sim):
     dis = (d1 + d2) - 2 * sim
     dis = 0.5 * (dis + dis.T)
     return dis
+
+def EmbedDataComplexValued(X_Train, X_Test, SubsampleSizeM): 
+    N = X_Train.shape[0]
+    R = np.random.choice(N, SubsampleSizeM) # landmark selection can be done by k-means++ also for indefinite due to Oglic (2019)
+    R.sort()
+    X_Train_nm = X_Train[:,R]
+    X_Train_mm = X_Train[np.ix_(R,R)] # symmetric subsample matrix from the original X_Train
+    X_Test_nm = X_Test[:,R]
+    
+    # REMARK:
+        # Here I simply skip Franks idea for large datasets and directly apply
+        # an eigendecomposition of the subsample Matrix with the size m x m
+        # This part can be kept uncommented for the first run. After the
+        # technical report, we may include a nystrom-approximated
+        # eigendecomposition in linear time...
+    
+
+    
+    
+                    #     if(EigendecompositionInLinearTime) # this works but is not needed - if W gets really huge we could use this or Halko
+                    #         ny_K{1}=Knm(R,:);
+                    #         ny_K{2} =W;
+                    #         #[U,S,V] = svd(Knm,0);
+                    #         [C, A]  = eig_ny(ny_K); # this is due to Gisbrecht(2015), but not
+                    #         # needed here, providing a linear time eigendecomposition of a 
+                    #         # nystroem-approximated kernel matrix (potentially non-psd)
+                    #     
+                    #     else   # the following line and the embedding is related to Landmark-MDS, due to Belongie/Fowlkes ECCV'2002 
+                    #        [C, A]  = eig(Knm(R,:)); # this is the eigendecomposition of a subsample from the kernel matrix m x m, which in contrast to the ECCV-paper can be non-psd
+                    #     end
+                    
+
+    
+    # X_Train_IsFullRank = rank(X_Train) == N;
+    
+    if(False): # if input is Kmm - cheaper inverse is taken on a diagonal
+        # we assume, that Kmm has full rank and hence has no zero eigenvalues 
+        # M2=pinv(sqrt(A))*C'*Knm';
+        
+        
+        # REMARK
+        # Now we embed the 'left' eigenvectors into a (possibly complex
+        # valued) vector space by taking the inverse of the
+        # eigenvalue matrix
+        # --> until now, everyone had to ensure that all eigenvalues have to be positve and hence took the absolute values of |diag(A)|.
+        # However, this is associated with loss of information, because we
+        # change the negative parts of the eigenspectrum.
+        # We ignore the negative eigenvalues not and let the 'left'
+        # eigenvalues become complex valued (implying that the complete
+        # embedding matrix becomes complex valued) because we have your
+        # great CGMLVW!
+        
+        # Here we have no need to calculate the inverse of X_Train_mm
+        # explicitly as X_Train_mm is of full rank. Therefore, we can
+        # simply determine the inverse on the diagonal of the eigenvalue
+        # matrix.
+        
+        [C, A]  = eig(X_Train_mm)
+
+        EmbeddedEigenvalues = diag(sqrt(1./diag(A)))
+        
+                #EmbeddedDataTrain=diag(sqrt(1./diag(A)))*C'*Knm'; # diag(sqrt(1./diag(A))) ~ is the right (or left, respectively) decomposition of Kmm
+        
+        # This step is moved outside of the if-else
+                # EmbeddedDataTest = diag(sqrt(1./diag(A))) * C' * DataTest;
+    else: # this is less cheap taking an inverse on Kmm to get W as seen in the above step
+        
+        
+        # Matlab: W = pinv(X_Train_mm)
+        W = np.linalg.pinv(X_Train_mm,hermitian=True)
+        W = 0.5*(W+W.T); # making W symmetric - just in case if there has anything gone terribly wrong during the pinv()-operation
+        # Matlab: [C,A] = eig(W)
+        A,C = np.linalg.eigh(W)
+        EmbeddedEigenvalues = np.diag(np.lib.scimath.sqrt(A))
+    
+    # Here we reconstruct the matrix but with the embedded eigenvalues.
+    
+    Embedded_X_Train = (EmbeddedEigenvalues @ C.T @ X_Train_nm.T).T
+    
+    # The Test data can easily embedded in the new vector space by using
+    # the embedded eigenvalues and eigenvectors.
+    Embedded_X_Test = (EmbeddedEigenvalues @ C.T @ X_Test_nm.T).T
+    # Kapprox = X_Train*W*X_Train';
+    return Embedded_X_Train, Embedded_X_Test
+
+
+def mydist(x,y):
+    return np.linalg.norm(x-y)
+
+class knn(object):
+  def __init__(self,x_train, y_train, neighbors=3):
+      super().__init__()
+      self.x_train = x_train 
+      self.y_train = y_train
+      self.neighbors = neighbors
+
+  def score(self, x_test, y_test):
+    acc = 0
+
+    for idx,test_row in enumerate(x_test):
+      distances = []
+      for train_row in self.x_train:
+        distances.append(np.linalg.norm(train_row-test_row))
+      top_n = np.asarray(distances).argsort()[:self.neighbors]
+      labels = self.y_train[top_n]
+      #wta
+      pred = np.bincount(labels.astype(int)).argmax()
+      if pred == y_test[idx]: acc +=1
+    return pred/y_test.shape[0]
+
+  def score_step(self,test_row_idx):
+    distances = []
+    for train_row in self.x_train:
+      distances.append(np.linalg.norm(train_row-self.x_test[test_row_idx]))
+    top_n = np.asarray(distances).argsort()[:self.neighbors]
+    labels = self.y_train[top_n]
+    #wta
+    pred = np.bincount(labels.astype(int)).argmax()
+    #print(pred)
+    #print(self.y_test[test_row_idx])
+    return int(float(pred) == self.y_test[test_row_idx])
+
+  def multi_score(self, x_test, y_test):
+    self.y_test=y_test
+    self.x_test=x_test
+    a_pool = multiprocessing.Pool()
+    result = a_pool.map(self.score_step, range(len(x_test)))
+    print(np.sum(result)/self.y_test.shape[0])
+    
