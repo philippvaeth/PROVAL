@@ -171,6 +171,17 @@ def sim2dis(sim):
     dis = 0.5 * (dis + dis.T)
     return dis
 
+def sim2dis_2(sim):
+    (n, m) = sim.shape
+    if n != m:
+        raise Exception('The similarity matrix must be square.')
+    if not is_symmetric(sim):
+        raise Exception('The similarity matrix must be symmetric.')
+
+    dis = np.diag(sim) - sim
+    dis = (dis + dis.T)
+    return dis
+
 def EmbedDataComplexValued(X_Train, X_Test, SubsampleSizeM): 
     N = X_Train.shape[0]
     R = np.random.choice(N, SubsampleSizeM) # landmark selection can be done by k-means++ also for indefinite due to Oglic (2019)

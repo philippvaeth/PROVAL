@@ -23,8 +23,8 @@ embedder = CPCProtEmbedding(model)
 tokenizer = Tokenizer()
 
 # Example primary sequence
-#seq = "AGEPKLDAGV"
-seq = "LITRSVSRPLRYAVDIIEDIAQGNLRRDVSVTGKDEVSRLLAAMSSQRERLSA"
+seq = "AGEPKLDAGV"
+#seq = "LITRSVSRPLRYAVDIIEDIAQGNLRRDVSVTGKDEVSRLLAAMSSQRERLSA"
 
 # Tokenize and convert to torch tensor
 t=time.time()
@@ -35,7 +35,7 @@ n = 11-len(input[0])
 if n > 0:
   input = torch.cat((input[0],torch.zeros(n,dtype=int)),dim=0).unsqueeze(0)
 
-
+print(input)
 summary(embedder,input_data=input,depth=5,verbose=1,col_names=["input_size","output_size","num_params"],method="zmean")
 summary(embedder,input_data=input,depth=5,verbose=1,col_names=["input_size","output_size","num_params"],method="cmean")
 summary(embedder,input_data=input,depth=5,verbose=1,col_names=["input_size","output_size","num_params"],method="cfinal")
