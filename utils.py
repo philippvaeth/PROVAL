@@ -121,7 +121,12 @@ def make_psd(matrix):
     return torch.mm(u,s_corr,v.T)
 
 def read_fasta(fastaFile):
-  return list(SeqIO.parse("sequences.fasta", "fasta"))
+  seq_list = []
+  sequences = SeqIO.parse(fastaFile, "fasta")
+  for seq in sequences:
+    seq.description = re.search("\[(.*?)\]",seq.description).group(1)
+    seq_list.append(seq)
+  return seq_list
 
 def esm1b_preprocessing(sequences: SeqIO):
   c=0
