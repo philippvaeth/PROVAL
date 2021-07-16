@@ -309,9 +309,51 @@ class knn(object):
     return int(float(pred) == self.y_test[test_row_idx])
 
   def multi_score(self, x_test, y_test):
+      self.y_test=y_test
+      self.x_test=x_test
+      a_pool = multiprocessing.Pool()
+      result = a_pool.map(self.score_step, range(len(x_test)))
+      print(np.sum(result)/self.y_test.shape[0])
+
+class knn_dict(object):
+  def __init__(self,x_train, y_train, neighbors=3):
+      super().__init__()
+      self.x_train = x_train 
+      self.y_train = y_train
+      self.neighbors = neighbors
+
+  def score(self, x_test, y_test):
+    acc = 0
+
+    for idx,test_row in enumerate(x_test):
+      distances = []
+      for train_row in self.x_train:
+        distances.append(np.linalg.norm(train_row-test_row))
+      top_n = np.asarray(distances).argsort()[:self.neighbors]
+      labels = self.y_train[top_n]
+      #wta
+      pred = np.bincount(labels.astype(int)).argmax()
+      if pred == y_test[idx]: acc +=1
+    return pred/y_test.shape[0]
+
+  def score_step(self,test_row_idx):
+    distances = {}#[]
+    for train_sequence_id, train_sequence_vec in self.x_train.items():
+      #distances.append(np.linalg.norm(train_row-self.x_test[test_row_idx]))
+      distances[train_sequence_id] = np.linalg.norm(train_sequence_vec-self.x_test[test_row_idx])
+    #top_n = np.asarray(distances).argsort()[:self.neighbors]
+    top_n = sorted(distances, key=distances.get)[:self.neighbors]
+    labels = [int(self.y_train[id]) for id in top_n]
+    #wta
+    pred = np.bincount(labels).argmax()
+    #print(pred)
+    #print(self.y_test[test_row_idx])
+    return int(float(pred) == self.y_test[test_row_idx])
+
+  def multi_score(self, x_test, y_test):
     self.y_test=y_test
     self.x_test=x_test
-    a_pool = multiprocessing.Pool()
-    result = a_pool.map(self.score_step, range(len(x_test)))
-    print(np.sum(result)/self.y_test.shape[0])
-    
+    result = [self.score_step(key) for key in x_test.keys()]
+    #a_pool = multiprocessing.Pool()
+    #result = a_pool.map(self.score_step, x_test.keys())
+    print(np.sum(result)/len(self.y_test))
