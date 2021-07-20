@@ -12,5 +12,7 @@ print(df.shape)
 assert list(df) == [_.id for _ in train]
 assert list(df.index) == [_.id for _ in test]
 
-#print(train)
+print(df)
+
+# #print(train)
 

@@ -353,7 +353,7 @@ class knn_dict(object):
   def multi_score(self, x_test, y_test):
     self.y_test=y_test
     self.x_test=x_test
-    result = [self.score_step(key) for key in x_test.keys()]
-    #a_pool = multiprocessing.Pool()
-    #result = a_pool.map(self.score_step, x_test.keys())
+    #result = [self.score_step(key) for key in x_test.keys()]
+    a_pool = multiprocessing.Pool()
+    result = a_pool.map(self.score_step, x_test.keys())
     print(np.sum(result)/len(self.y_test))
