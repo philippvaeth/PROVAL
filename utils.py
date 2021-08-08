@@ -10,7 +10,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from sklearn.model_selection import train_test_split
-
+from sklearn.decomposition import TruncatedSVD
 
 def downloadGDriveFile(fileID, fileName):
   os.system("gdown 'https://drive.google.com/uc?id={}'".format(fileID))
@@ -271,6 +271,54 @@ def EmbedDataComplexValued(X_Train, X_Test, SubsampleSizeM):
     # Kapprox = X_Train*W*X_Train';
     return Embedded_X_Train, Embedded_X_Test
 
+def EmbedDataPelskaDuinApprox(X_Train, X_Test, SubsampleSizeM): 
+    N = X_Train.shape[0]
+    R = np.random.choice(N, SubsampleSizeM) # landmark selection can be done by k-means++ also for indefinite due to Oglic (2019)
+    R.sort()
+    X_Train_nm = X_Train[:,R]
+    X_Train_mm = X_Train[np.ix_(R,R)] # symmetric subsample matrix from the original X_Train
+    X_Test_nm = X_Test[:,R]
+    
+   
+    # Matlab: W = pinv(X_Train_mm)
+    W = np.linalg.pinv(X_Train_mm,hermitian=True)
+    W = 0.5*(W+W.T); # making W symmetric - just in case if there has anything gone terribly wrong during the pinv()-operation
+    # Matlab: [C,A] = eig(W)
+    A,C = np.linalg.eigh(W)
+    EmbeddedEigenvalues = np.diag(np.lib.scimath.sqrt(np.abs(A)))
+    
+    # Here we reconstruct the matrix but with the embedded eigenvalues.
+    Embedded_X_Train = (EmbeddedEigenvalues @ C.T @ X_Train_nm.T).T
+    
+    # The Test data can easily embedded in the new vector space by using
+    # the embedded eigenvalues and eigenvectors.
+    Embedded_X_Test = (EmbeddedEigenvalues @ C.T @ X_Test_nm.T).T
+    return Embedded_X_Train, Embedded_X_Test
+
+def EigenvalueCorrection(X_Train, X_Test, d=100):
+    A,C = np.linalg.eigh(X_Train)
+    CorrectedEigenvalues = np.diag(np.lib.scimath.sqrt(np.abs(A)))
+    Corrected_X_Train = (CorrectedEigenvalues @ C.T @ X_Train.T).T
+    Corrected_X_Test = (CorrectedEigenvalues @ C.T @ X_Test.T).T
+    
+    tsvd = TruncatedSVD(n_components=d)
+    Embedded_X_Train = tsvd.fit_transform(Corrected_X_Train)
+    Embedded_X_Test = tsvd.transform(Corrected_X_Test)
+    return Embedded_X_Train, Embedded_X_Test
+
+def PelskaDuin(X_Train, X_Test, d=100):
+  (n, m) = X_Train.shape
+  if n != m:
+      raise Exception('The similarity matrix must be square.')
+  if not is_symmetric(X_Train):
+      raise Exception('The similarity matrix must be symmetric.')
+  A,C = np.linalg.eigh(X_Train)
+  CorrectedEigenvalues = np.diag(np.lib.scimath.sqrt(A[-d:]))
+  Corrected_X_Train = (CorrectedEigenvalues @ C[-d:,:] @ X_Train.T).T # (100,100) @ (100,10000) @ (10000,10000)
+  Corrected_X_Test = (CorrectedEigenvalues @ C[-d:,:] @ X_Test.T).T # (100,100) @ (100,10000) @ (10000,5000)
+  return Corrected_X_Train, Corrected_X_Test
+  
+#CorrectedEigenvalues = np.diag(np.lib.scimath.sqrt(A[-100:]))
 
 def mydist(x,y):
     return np.linalg.norm(x-y)

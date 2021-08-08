@@ -138,10 +138,16 @@ trained_models
 .vscode
 __MACOSX
 data/uniprot_sprot.fasta
+temp
+tsne_30
+vecs
+vecs_other
+pca
+tests 
 
 # Calculation saves
 *.npy
 *.pt
 *.tab
 *.json
-
+*.pkl

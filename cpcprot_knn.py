@@ -11,8 +11,7 @@ from utils import knn_dict, read_fasta
 
 import numpy as np
 
-vec_type = 'cfinal' # ['zmean','cmean','cfinal']
-trunc = True
+vec_type = 'zmean' # ['zmean','cmean','cfinal']
 
 if os.path.isfile("vecs/cpcprot_vecs_{}_tsvd.p".format(vec_type)): 
     embedded_x_train, y_train, embedded_x_test, y_test = pickle.load(open("vecs/cpcprot_vecs_{}_tsvd.p".format(vec_type),"rb"))
@@ -69,23 +68,23 @@ else:
         embedded_x_train[str(s.id)] = vec.detach().cpu().squeeze(0)
         y_train[str(s.id)] = float(s.description)
     
+    svd = TruncatedSVD(n_components=100)
+    vec_stack = torch.stack(list(embedded_x_train.values()))
+    svd.fit(vec_stack)
+
+    def truncate(item):
+        vec = svd.transform(item[1].reshape(1,-1))
+        return (item[0], vec)
+
+    embedded_x_train = dict(map(truncate, embedded_x_train.items()))
+    embedded_x_test = dict(map(truncate, embedded_x_test.items()))
+
     pickle.dump( [embedded_x_train, y_train, embedded_x_test, y_test], open( "vecs/cpcprot_vecs_{}_tsvd.p".format(vec_type), "wb" ) )
 
-    if trunc:
-        svd = TruncatedSVD(n_components=100)
-        vec_stack = torch.stack(list(embedded_x_train.values()))
-        svd.fit(vec_stack)
-
-        def truncate(item):
-            vec = svd.transform(item[1].reshape(1,-1))
-            return (item[0], vec)
-
-        embedded_x_train = dict(map(truncate, embedded_x_train.items()))
-        embedded_x_test = dict(map(truncate, embedded_x_test.items()))
 
 
 knearestneighbors = knn_dict(embedded_x_train, y_train)
 knearestneighbors.multi_score(embedded_x_test, y_test)
-# zmean tsvd: 0.777
+# zmean tsvd: 0.777, 0.777
 # cmean tsvd: 0.8332
-# cfinal tsvd: 0.82
+# cfinal tsvd: 0.8222, 0.8222 , 0.8222

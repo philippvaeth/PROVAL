@@ -1,15 +1,11 @@
-#from . import protvec
-#from . import protveckyu as protvec
 import biovec
 from utils import *
 import pickle
 
-#from protveckyu import prot_vec, utils
-if os.path.isfile("vecs/protvec_vecs.p"): 
+if os.path.isfile("vecs/protvec_vecs.p") and False: 
     embedded_x_train, y_train, embedded_x_test, y_test = pickle.load(open("vecs/protvec_vecs.p","rb"))
 else:
     pv = biovec.models.load_protvec('biovec/trained_models/swissprot-reviewed-protvec.model')
-    #pv.to_vecs("AGAMQSASM")
 
     train = read_fasta("train.fasta")
     test = read_fasta("test.fasta")
@@ -32,4 +28,4 @@ else:
 
 knearestneighbors = knn_dict(embedded_x_train, y_train)
 knearestneighbors.multi_score(embedded_x_test, y_test)
-# 0.8132
+# 0.8132, 0.8132,  0.8132 (mean  81.32, std 0)

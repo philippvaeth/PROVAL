@@ -16,8 +16,8 @@ from torchinfo import summary
 
 from utils import esm1b_preprocessing, knn, knn_dict, read_fasta
 
-if os.path.isfile("vecs/esm1b_vecs_all.p"): 
-    embedded_x_train, y_train, embedded_x_test, y_test = pickle.load(open("vecs/esm1b_vecs_all.p","rb"))
+if os.path.isfile("vecs/esm1b_vecs_tsvd.p") and False: 
+    embedded_x_train, y_train, embedded_x_test, y_test = pickle.load(open("vecs/esm1b_vecs_tsvd.p","rb"))
 else:
     train = read_fasta("train.fasta")
     test = read_fasta("test.fasta")
@@ -55,8 +55,6 @@ else:
             embedded_x_train[str(s.id)] = seq_rep.detach().cpu()
             y_train[str(s.id)] = float(s.description)
 
-trunc = True
-if trunc:
     svd = TruncatedSVD(n_components=100)
     vec_stack = torch.stack([_ for _ in embedded_x_train.values()])
     svd.fit(vec_stack)
@@ -68,9 +66,11 @@ if trunc:
     embedded_x_train = dict(map(truncate, embedded_x_train.items()))
     embedded_x_test = dict(map(truncate, embedded_x_test.items()))
 
+    pickle.dump( [embedded_x_train, y_train, embedded_x_test, y_test], open( "vecs/esm1b_vecs_tsvd.p", "wb" ) )
+
 knearestneighbors = knn_dict(embedded_x_train, y_train)
 knearestneighbors.multi_score(embedded_x_test, y_test)
-# trunc (100D): 0.9324
+# trunc (100D): 0.9328, 0.9328, 0.9328 (mean 93.28, std 0)
 # full (1280D): 0.947
 
 
