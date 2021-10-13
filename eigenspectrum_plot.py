@@ -12,7 +12,7 @@ import pandas as pd
 
 method = "eigenspectrum" 
 
-for filename in ['bilstm_vecs_proj.p']:#os.listdir("vecs"): 
+for filename in os.listdir("vecs"): 
     embedded_x_train, y_train, embedded_x_test, y_test = pickle.load(open("vecs/{}".format(filename),"rb"))
     #y = np.concatenate((np.array(list(y_test.values())), np.array(list(y_train.values()))),0)
     vecs = np.concatenate((np.array(list(np.squeeze(np.array(x)) for x in embedded_x_test.values())),np.array(list(np.squeeze(np.array(x)) for x in embedded_x_train.values()))),0)

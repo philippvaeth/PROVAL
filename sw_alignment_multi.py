@@ -64,6 +64,7 @@ mode = "all" #['train', 'test', 'all']
 
 if mode == "train":
     # Train (10000 x 10000) - 16 min
+    t = time.time()
     sw = sw_multiprocessing("train.fasta","train.fasta")
     query = read_fasta("train.fasta")
     sw.multi_score(query)
@@ -71,6 +72,7 @@ if mode == "train":
     sw.sw_alignment_matrix.to_pickle("sw_alignment_train.pkl")
     print(sw.sw_alignment_matrix.isnull().values.any())
     assert sw.sw_alignment_matrix.isnull().values.any() == False
+    print("Time:",time.time()-t)
 
 if mode == "test":
     # Test x Train (5000 x 10000)
@@ -83,18 +85,17 @@ if mode == "test":
 
 if mode == "all":
     # Full Train+Test x Train+Test (15000 x 15000)
-    t = time.time()
     all_sequences_fasta = "all_sequences.fasta"
     sequences = read_fasta("train.fasta") + read_fasta("test.fasta")
     for seq in sequences:
         seq.description = "[{}]".format(seq.description)
     SeqIO.write(sequences, all_sequences_fasta, "fasta")
-
+    t = time.time()
     sw = sw_multiprocessing(all_sequences_fasta,all_sequences_fasta)
     print(len(sequences))
     sw.multi_score(sequences)
     assert sw.sw_alignment_matrix.isnull().values.any() == False
     print(sw.sw_alignment_matrix)
-    sw.sw_alignment_matrix.to_pickle("sw_alignment_all.pkl")
+    #sw.sw_alignment_matrix.to_pickle("sw_alignment_all.pkl")
     os.remove(all_sequences_fasta)
     print("Time:",time.time()-t)

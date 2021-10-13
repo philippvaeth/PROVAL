@@ -131,7 +131,6 @@ dmypy.json
 # Archive, working folders
 archive/
 my_reprs/
-pretrained_models
 lightning_logs
 protvec
 trained_models
@@ -142,6 +141,8 @@ temp
 tsne_30
 vecs
 vecs_other
+tsne
+dataset_metrics
 pca
 tests 
 

@@ -1,8 +1,10 @@
+from os import times
 import pandas as pd
 
 from utils import *
 import os.path
 import pickle
+import time
 
 # sequences = SeqIO.parse("data/sequences_labels.fasta", "fasta")
 
@@ -21,7 +23,7 @@ test_fasta = "test.fasta"
 test = SeqIO.parse(test_fasta, "fasta")
 
 # TRAIN
-
+t = time.time()
 output_file = "train.txt"
 output_matrix_file = "sw_alignment_train.pkl"
 
@@ -59,7 +61,8 @@ else:
   sw_alignment_matrix = pickle.load(open(output_matrix_file,"rb"))
 
 print(sw_alignment_matrix)
-
+print(time.time()-t)
+exit
 # TEST
 
 output_file = "test.txt"
