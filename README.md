@@ -1,5 +1,7 @@
 # Code repository for the Master thesis "Comparison of Protein Sequence Embeddings to Classify Molecular Functions" by Philipp Väth
-1. Install requirements.txt:
+1. Install requirements:
+    * Conda environment: 
+        * conda env create -f environment.yml
     * Smith-Waterman SSW Library:
         * Download the software from https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.
         * cd src

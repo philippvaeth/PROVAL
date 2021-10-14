@@ -69,7 +69,7 @@ def alignSmithWaterman(mode="full"):
         sw.multi_score(query)
         sw.sw_alignment_matrix.to_pickle("data/sw_alignment_train.pkl")
         assert sw.sw_alignment_matrix.isnull().values.any() == False
-        print("Train time:",time.time()-t)
+        print("Smith-Waterman TrainxTrain time:",time.time()-t)
 
         # Test x Train (5000 x 10000)
         t = time.time()
@@ -78,7 +78,7 @@ def alignSmithWaterman(mode="full"):
         sw.multi_score(query)
         assert sw.sw_alignment_matrix.isnull().values.any() == False
         sw.sw_alignment_matrix.to_pickle("data/sw_alignment_test.pkl")
-        print("Test time:",time.time()-t)
+        print("Smith-Waterman TestxTrain time:",time.time()-t)
 
     elif mode == "full":
         # Full Train+Test x Train+Test (15000 x 15000)
@@ -93,4 +93,4 @@ def alignSmithWaterman(mode="full"):
         assert sw.sw_alignment_matrix.isnull().values.any() == False
         sw.sw_alignment_matrix.to_pickle("data/sw_alignment_all.pkl")
         os.remove(all_sequences_fasta)
-        print("Time:",time.time()-t)
+        print("Smith-Waterman full matrix time:",time.time()-t)

@@ -139,6 +139,8 @@ __MACOSX
 data/uniprot_sprot.fasta
 temp/*
 tsne_30
+vecs
+eigenspectrum
 tsne
 dataset_metrics
 pca
