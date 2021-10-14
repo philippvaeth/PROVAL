@@ -2,7 +2,6 @@ import collections
 import multiprocessing
 import os
 import re
-import sys
 import numpy as np
 import torch
 from Bio import SeqIO
@@ -180,7 +179,7 @@ class knn(object):
     return pred/y_test.shape[0]
 
   def score_step(self,test_row_idx):
-    distances = {}#[]
+    distances = {}
     for train_sequence_id, train_sequence_vec in self.x_train.items():
       distances[train_sequence_id] = np.linalg.norm(train_sequence_vec-self.x_test[test_row_idx])
     top_n = sorted(distances, key=distances.get)[:self.neighbors]

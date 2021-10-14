@@ -9,7 +9,7 @@
     * ProtVec:
         * pip install biovec
     * biLSTM:
-        (Google Colab: )
+        (Google Colab: https://colab.research.google.com/drive/1awz63tkC8u2RHF25n6BElcq5C_XS5wSt?usp=sharing)
         or use the provided "bilstm_vecs_proj.p" vectors
     * ESM-1b: 
         * pip install fair-esm
