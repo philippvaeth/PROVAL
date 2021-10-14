@@ -1,5 +1,4 @@
-# ProtSeqEmb
-Comparison of Protein Sequence Embeddings to Classify Molecular Functions
+# Code repository for the Master thesis "Comparison of Protein Sequence Embeddings to Classify Molecular Functions" by Philipp Väth
 1. Install requirements.txt:
     * Smith-Waterman SSW Library:
         * Download the software from https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.
