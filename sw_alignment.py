@@ -1,104 +1,96 @@
-from os import times
 import pandas as pd
-
-from utils import *
-import os.path
-import pickle
+import os
+import re
+import multiprocessing
+from utils import read_fasta
+from Bio import SeqIO
+import subprocess
+import tqdm
 import time
 
-# sequences = SeqIO.parse("data/sequences_labels.fasta", "fasta")
+class sw_multiprocessing(object):
+    def __init__(self, train_fasta, test_fasta):
+        super().__init__()
+        self.query = read_fasta(test_fasta)
+        self.database = read_fasta(train_fasta)
+        #self.sw_alignment_matrix = pd.DataFrame(index=[seq.id for seq in self.query], columns=[seq.id for seq in self.database])
+        self.train_fasta = train_fasta
+        self.test_fasta = test_fasta
+        self.pattern_target = "target_name: (.*?)\n"
+        self.pattern_query = "query_name: (.*?)\n"
+        self.pattern_score = "optimal_alignment_score: (.*?)s"
+        
+    def score_step(self,query_seq):
+        output_file = 'temp/{}.txt'.format(query_seq.id)
+        fasta_file = 'temp/{}.fasta'.format(query_seq.id)
+        SeqIO.write([query_seq], fasta_file, "fasta")
+        subprocess.run('Complete-Striped-Smith-Waterman-Library/src/ssw_test -p {} {} > {}'.format(fasta_file,self.train_fasta,output_file), shell=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+        df_row = pd.DataFrame(index=[query_seq.id], columns=[seq.id for seq in self.database])
+        with open(output_file) as my_file:
+            for idx,line in enumerate(my_file):
+                #print(idx,line)
+                if idx%4 ==0: # Line 0: target
+                    target = re.search(self.pattern_target, line).group(1)
+                    #print(target)
+                elif idx%4 ==1:  # Line 1: query
+                    #print(line)
+                    query = re.search(self.pattern_query, line).group(1)
+                    #print(query)
+                elif idx%4 == 2: # Line 3: alignment score
+                    #print(line)
+                    sw_score = re.search(self.pattern_score, line).group(1)
+                    #print(sw_score)
+                    #print(str(idx)+" ,"+str(idx//(n*4))+" ,"+str(idx//4%n))
+                    #print(query,target,sw_score)
+                    #self.sw_alignment_matrix.at[target,query] = int(sw_score)
+                    df_row.at[target,query] = int(sw_score)
 
+        os.remove(output_file)
+        os.remove(fasta_file)
+        return df_row
+        #print(self.sw_alignment_matrix.iloc[:, 0].count()/len(self.sw_alignment_matrix.iloc[:, 0]))
 
-# train, test = train_test_split(list(sequences), test_size=1/3)
-# print(len(train))
-# print(len(test))
-# SeqIO.write(train, "train.fasta", "fasta")
-# SeqIO.write(test, "test.fasta", "fasta")
+    def multi_score(self, query):
+        #result = [self.score_step(seq) for seq in query]
+        a_pool = multiprocessing.Pool(30)
+        df_rows = a_pool.map(self.score_step, query)
+        self.sw_alignment_matrix = pd.concat(df_rows)
+        #self.sw_alignment_matrix.to_pickle("sw_alignment_traintest.pkl")
 
-# output_file = "test.txt"
-# os.system("Complete-Striped-Smith-Waterman-Library/src/ssw_test -p {} {} > {}".format("train.fasta","test.fasta",output_file))
-train_fasta = "train.fasta"
-train = SeqIO.parse(train_fasta, "fasta")
-test_fasta = "test.fasta"
-test = SeqIO.parse(test_fasta, "fasta")
+        #for _ in tqdm.tqdm(a_pool.imap_unordered(self.score_step, query), total=len(query)):
+        #    pass
 
-# TRAIN
-t = time.time()
-output_file = "train.txt"
-output_matrix_file = "sw_alignment_train.pkl"
+def alignSmithWaterman(mode="full"):
+    if mode == "traintest":
+        # Train (10000 x 10000)
+        t = time.time()
+        sw = sw_multiprocessing("data/train.fasta","data/train.fasta")
+        query = read_fasta("data/train.fasta")
+        sw.multi_score(query)
+        sw.sw_alignment_matrix.to_pickle("data/sw_alignment_train.pkl")
+        assert sw.sw_alignment_matrix.isnull().values.any() == False
+        print("Train time:",time.time()-t)
 
-if not os.path.isfile(output_file): 
-  os.system("Complete-Striped-Smith-Waterman-Library/src/ssw_test -p {} {} > {}".format(train_fasta,train_fasta,output_file))
+        # Test x Train (5000 x 10000)
+        t = time.time()
+        sw = sw_multiprocessing("data/train.fasta","data/test.fasta")
+        query = read_fasta("data/test.fasta")
+        sw.multi_score(query)
+        assert sw.sw_alignment_matrix.isnull().values.any() == False
+        sw.sw_alignment_matrix.to_pickle("data/sw_alignment_test.pkl")
+        print("Test time:",time.time()-t)
 
-if not os.path.isfile(output_matrix_file): 
-  sw_alignment_matrix = pd.DataFrame(index=[seq.id for seq in train], columns=[seq.id for seq in train]) #  (10000 x 10000)
-
-  pattern_target = "target_name: (.*?)\n"
-  pattern_query = "query_name: (.*?)\n"
-  pattern_score = "optimal_alignment_score: (.*?)s"
-  file = "train.txt"
-
-  with open(file) as my_file:
-        for idx,line in enumerate(my_file):
-          #print(idx,line)
-          if idx%4 ==0: # Line 0: target
-              target = re.search(pattern_target, line).group(1)
-              #print(target)
-          elif idx%4 ==1:  # Line 1: query
-              #print(line)
-              query = re.search(pattern_query, line).group(1)
-              #print(query)
-          elif idx%4 == 2: # Line 3: alignment score
-            #print(line)
-            sw_score = re.search(pattern_score, line).group(1)
-            #print(sw_score)
-            #print(str(idx)+" ,"+str(idx//(n*4))+" ,"+str(idx//4%n))
-            #print(query,target,sw_score)
-            sw_alignment_matrix.at[query,target] = int(sw_score)
-
-  sw_alignment_matrix.to_pickle(output_matrix_file)
-else:
-  sw_alignment_matrix = pickle.load(open(output_matrix_file,"rb"))
-
-print(sw_alignment_matrix)
-print(time.time()-t)
-exit
-# TEST
-
-output_file = "test.txt"
-output_matrix_file = "sw_alignment_test.pkl"
-
-if not os.path.isfile(output_file): 
-  os.system("Complete-Striped-Smith-Waterman-Library/src/ssw_test -p {} {} > {}".format(train_fasta,test_fasta,output_file))
-
-if not os.path.isfile(output_matrix_file): 
-  sw_alignment_matrix = pd.DataFrame(index=[seq.id for seq in test], columns=[seq.id for seq in train]) #  (5000 x 10000)
-
-  pattern_target = "target_name: (.*?)\n"
-  pattern_query = "query_name: (.*?)\n"
-  pattern_score = "optimal_alignment_score: (.*?)s"
-  file = "test.txt"
-
-  with open(file) as my_file:
-        for idx,line in enumerate(my_file):
-          #print(idx,line)
-          if idx%4 ==0: # Line 0: target
-              target = re.search(pattern_target, line).group(1)
-              #print(target)
-          elif idx%4 ==1:  # Line 1: query
-              #print(line)
-              query = re.search(pattern_query, line).group(1)
-              #print(query)
-          elif idx%4 == 2: # Line 3: alignment score
-            #print(line)
-            sw_score = re.search(pattern_score, line).group(1)
-            #print(sw_score)
-            #print(str(idx)+" ,"+str(idx//(n*4))+" ,"+str(idx//4%n))
-            print(query,target,sw_score)
-            sw_alignment_matrix.at[query,target] = int(sw_score)
-
-  sw_alignment_matrix.to_pickle(output_matrix_file)
-else:
-  sw_alignment_matrix = pickle.load(open(output_matrix_file,"rb"))
-
-print(sw_alignment_matrix)
+    elif mode == "full":
+        # Full Train+Test x Train+Test (15000 x 15000)
+        all_sequences_fasta = "all_sequences.fasta"
+        sequences = read_fasta("data/train.fasta") + read_fasta("data/test.fasta")
+        for seq in sequences:
+            seq.description = "[{}]".format(seq.description)
+        SeqIO.write(sequences, all_sequences_fasta, "fasta")
+        t = time.time()
+        sw = sw_multiprocessing(all_sequences_fasta,all_sequences_fasta)
+        sw.multi_score(sequences)
+        assert sw.sw_alignment_matrix.isnull().values.any() == False
+        sw.sw_alignment_matrix.to_pickle("data/sw_alignment_all.pkl")
+        os.remove(all_sequences_fasta)
+        print("Time:",time.time()-t)

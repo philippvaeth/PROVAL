@@ -1,26 +1,31 @@
-import pickle, torch, biovec, esm
+import pickle, torch, biovec, esm, os
 from CPCProt.tokenizer import Tokenizer
 from CPCProt import CPCProtModel, CPCProtEmbedding
 import numpy as np
 from utils import is_symmetric
+from sw_alignment import alignSmithWaterman
 
 def swTrainTest(train, test, sw_alignment):
     if sw_alignment == "full":
         # Option 1: full alignment and the test / train split at suggested in Figure 2.2
-        sw_alignment_all = pickle.load(open("sw_alignment_all.pkl","rb")).to_numpy(dtype=np.float)
+        if not os.path.isfile("data/sw_alignment_all.pkl"):
+            alignSmithWaterman(sw_alignment)
+        sw_alignment_all = pickle.load(open("data/sw_alignment_all.pkl","rb")).to_numpy(dtype=np.float)
         sw_alignment_all = 0.5 * (sw_alignment_all + sw_alignment_all.T)
         sw_alignment_train = sw_alignment_all[:len(train),:len(train)]
         sw_alignment_test = sw_alignment_all[len(train):,:len(train)]
     elif sw_alignment == "traintest":
+        if not os.path.isfile("data/sw_alignment_train.pkl") and not os.path.isfile("data/sw_alignment_test.pkl"):
+            alignSmithWaterman(sw_alignment)
         # Option 2 (for completeness): alignment of all train sequences to all train sequences and all test sequences to all train sequences, respectively
-        sw_alignment_train = pickle.load(open("sw_alignment_train_train.pkl","rb"))
+        sw_alignment_train = pickle.load(open("data/sw_alignment_train.pkl","rb"))
         assert sw_alignment_train.isnull().values.any() == False
         assert list(sw_alignment_train) == [_.id for _ in train]
         assert list(sw_alignment_train.index) == [_.id for _ in train]
         sw_alignment_train = sw_alignment_train.to_numpy(dtype=np.float)
         sw_alignment_train = 0.5 * (sw_alignment_train + sw_alignment_train.T)
 
-        sw_alignment_test = pickle.load(open("sw_alignment_test.pkl","rb"))
+        sw_alignment_test = pickle.load(open("data/sw_alignment_test.pkl","rb"))
         assert sw_alignment_test.isnull().values.any() == False
         assert list(sw_alignment_test) == [_.id for _ in train]
         assert list(sw_alignment_test.index) == [_.id for _ in test]
@@ -61,25 +66,27 @@ def swDissimRepComplex(X_Train, X_Test, train_fasta, test_fasta, d):
 
 def protvec(train, test):
     pv = biovec.models.load_protvec('pretrained_models/swissprot-reviewed-protvec.model')
-    embedded_X_Train, embedded_X_Test = {}, {}
+    embedded_X_Train, embedded_X_Test, y_Train, y_Test = {}, {}, {}, {}
     for s in train:
         try: # necessary to skip sequences, where ngrams are missing
             embedded_X_Train[str(s.id)] = sum(pv.to_vecs(str(s.seq)))
+            y_Train[str(s.id)] = float(s.description)
         except Exception:
             pass
     for s in test:
         try: # necessary to skip sequences, where ngrams are missing
             embedded_X_Test[str(s.id)] = sum(pv.to_vecs(str(s.seq)))
+            y_Test[str(s.id)] = float(s.description)
         except Exception:
             pass
     
-    return embedded_X_Train, embedded_X_Test
+    return embedded_X_Train, y_Train, embedded_X_Test, y_Test
 
 def esm1b(train, test):
     model, alphabet = esm.pretrained.esm1b_t33_650M_UR50S()
     model = model.cuda()
     batch_converter = alphabet.get_batch_converter()
-    embedded_X_Train, embedded_X_Test = {}, {} 
+    embedded_X_Train, embedded_X_Test, y_Train, y_Test = {}, {}, {}, {} 
 
     for s in train:
         if len(s.seq) <= 1022:
@@ -92,6 +99,7 @@ def esm1b(train, test):
             seq_rep = token_representations[0, 1 : len(s.seq) + 1].mean(0)
 
             embedded_X_Train[str(s.id)] = np.squeeze(seq_rep.detach().cpu())
+            y_Train[str(s.id)] = float(s.description)
 
     for s in test:
         if len(s.seq) <= 1022:
@@ -104,8 +112,9 @@ def esm1b(train, test):
             seq_rep = token_representations[0, 1 : len(s.seq) + 1].mean(0)
 
             embedded_X_Test[str(s.id)] = np.squeeze(seq_rep.detach().cpu())
+            y_Test[str(s.id)] = float(s.description)
 
-    return embedded_X_Train, embedded_X_Test
+    return embedded_X_Train, y_Train, embedded_X_Test, y_Test
 
 def cpcprot(train, test, vec_type):
     ckpt_path = "pretrained_models/cpcprot_best.ckpt"  # Replace with actual path to CPCProt weights
@@ -136,7 +145,7 @@ def cpcprot(train, test, vec_type):
             vec = embedder.get_c_final(input)  # (1, 512)
         else: raise ValueError
         
-        embedded_X_Train[str(s.id)] = np.squeeze(vec.detach().cpu().squeeze(0))
+        embedded_X_Train[str(s.id)] = np.squeeze(vec.detach().cpu())
 
     for s in test:
         tokens = tokenizer.encode(s.seq)
@@ -152,6 +161,6 @@ def cpcprot(train, test, vec_type):
             vec = embedder.get_c_final(input)  # (1, 512)
         else: raise ValueError
 
-        embedded_X_Test[str(s.id)] = np.squeeze(vec.detach().cpu().squeeze(0))
+        embedded_X_Test[str(s.id)] = np.squeeze(vec.detach().cpu())
 
     return embedded_X_Train, embedded_X_Test

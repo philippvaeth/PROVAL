@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from biovec.utils import split_ngrams
 
 # Load data
-train = read_fasta("train.fasta")
-test = read_fasta("test.fasta")
+train = read_fasta("data/train.fasta")
+test = read_fasta("data/test.fasta")
 data = train + test
 
 # General sequence stats
@@ -19,18 +19,16 @@ print("Maximum sequence length: ",min(sequence_lenths))
 
 # Amino acid stats
 amino_acids = "".join(raw_sequences)
-#amino_acid_counts = OrderedDict(Counter(amino_acids).most_common())
 amino_acid_counts = OrderedDict(sorted(Counter(amino_acids).items()))
 print("Amino acids in the dataset: ",len(amino_acids))
 print("Amino acids counts: ",amino_acid_counts)
 fig, ax = plt.subplots()
-ax.bar((amino_acid_counts.keys()),amino_acid_counts.values()) #, width=0.8
+ax.bar((amino_acid_counts.keys()),amino_acid_counts.values())
 plt.savefig('{}/{}.jpg'.format("dataset_metrics","amino_acid_counts"), transparent=True,dpi=400,)
 
 # 3-gram stats + histogram
 n_gram_list1,n_gram_list2,n_gram_list3  = split_ngrams(amino_acids,3)
 n_gram_list = n_gram_list1 + n_gram_list2 + n_gram_list3
-#n_gram_counts = OrderedDict(Counter(n_gram_list).most_common())
 n_gram_counts = OrderedDict(sorted(Counter(n_gram_list).items()))
 print("unique 3-grams in the dataset: ",len(np.unique(n_gram_list)))
 print("3-grams occ <= 1000: ",len(np.array(list(n_gram_counts.values()))[np.array(list(n_gram_counts.values())) <= 1000])/len(np.array(list(n_gram_counts.values())))
@@ -44,7 +42,7 @@ plt.savefig('{}/{}.jpg'.format("dataset_metrics","3gram_counts"), transparent=Tr
 # most common 3-grams
 n_gram_most_common =  OrderedDict(Counter(n_gram_list).most_common()[:15])
 fig, ax = plt.subplots()
-ax.bar((n_gram_most_common.keys()),n_gram_most_common.values()) #, width=0.8
+ax.bar((n_gram_most_common.keys()),n_gram_most_common.values())
 plt.savefig('{}/{}.jpg'.format("dataset_metrics","3gram_most_common"), transparent=True,dpi=400,)
 
 # Class overview
@@ -57,11 +55,8 @@ explode = (0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1)
 colors = {3677.0:'#e6194B', 3723.0:'#3cb44b', 3735.0:'#ffe119', 3746.0:'#4363d8', 3755.0:'#f58231', 4867.0:'#42d4f4', 5198.0:'#f032e6', 5509.0:'#fabed4', 5524.0:'#469990', 8137.0:'#dcbeff', 16491.0:'#9A6324', 22857.0:'#fffac8',46872.0:'#800000', 46933.0:'#aaffc3', 90729.0:'#000075'}
 
 fig, ax = plt.subplots()
-ax.pie(sizes, autopct='%1.1f%%',explode=explode,labels=labels,colors=colors.values(),#,labels=labels,shadow=True,
+ax.pie(sizes, autopct='%1.1f%%',explode=explode,labels=labels,colors=colors.values(),
          startangle=90)
 ax.axis('equal')
-#fig.legend(loc="lower center", bbox_to_anchor=(0.5, -0.3))
 plt.savefig('{}/{}.jpg'.format("dataset_metrics","classes"), transparent=True,dpi=400,)
-
-print(len(data))
 

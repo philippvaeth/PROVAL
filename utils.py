@@ -3,37 +3,24 @@ import multiprocessing
 import os
 import re
 import sys
-
 import numpy as np
 import torch
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from sklearn.model_selection import train_test_split
-from sklearn.decomposition import TruncatedSVD
 
 def downloadGDriveFile(fileID, fileName):
   os.system("gdown 'https://drive.google.com/uc?id={}'".format(fileID))
   os.system("unzip '{}'".format(fileName))
 
-def unzip(filename):
-  pzf = PyZipFile(filename)
-  pzf.extractall()
-
 def setup():
-  #os.system("pip install gdown")
-  os.system("gdown 'https://drive.google.com/uc?id=1RHVICFAPIHjsb9pTI_X1mimDZBLSwdW2'")
-  #os.system("unzip 'uniprot.tab.zip'")
-  unzip("uniprot.tab.zip")
   os.system("git clone https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.git")
   os.system("cd Complete-Striped-Smith-Waterman-Library/src;make")
   os.system("git clone https://github.com/tbepler/protein-sequence-embedding-iclr2019.git")
   os.system("cd protein-sequence-embedding-iclr2019/;python setup.py build_ext --inplace")
   os.system("wget http://bergerlab-downloads.csail.mit.edu/bepler-protein-sequence-embeddings-from-structure-iclr2019/pretrained_models.tar.gz;tar -xf pretrained_models.tar.gz")
-  #os.system("pip install biopython")
-  #downloadGDriveFile("1uk128kGh1FDAjnV78gsM4UEvLjEnW13i", "sim_matrix.npy.zip")
-  #os.system("unzip 'sim_matrix.npy.zip'")
-  
+
 def getTopNSingleClassIds(data,top_classes):
     # Get IDs of single class sequences
     ids = []
@@ -44,14 +31,12 @@ def getTopNSingleClassIds(data,top_classes):
     counts = collections.Counter(np.hstack(np.array(data.y)[ids]))
     # Get IDs for most common n classes with only one label
     most_common_classes = [item[0] for item in counts.most_common()[:top_classes]]
-    #print(most_common_classes)
     ids_dict = {}
     for c in most_common_classes:
       ids = []
       for idx,y in enumerate(data.y):
         if len(data.y[idx]) == 1 and (data.y[idx]==[c]).all():
           ids.append(idx)
-      #print(len(ids))
       ids_dict[c]=ids
     return ids_dict
 
@@ -75,7 +60,6 @@ def loadtomatrix(file, n, mode="BLAST"):
       for idx,line in enumerate(my_file):
         if mode == "BLAST" and idx%4 == 2:
           sw_score = re.search(pattern, line).group(1)
-          #print(str(idx)+" ,"+str(idx//(n*4))+" ,"+str(idx//4%n))
           sim_matrix[idx//(n*4),idx//4%n] = int(sw_score)
         elif mode == "SAM":
           sw_score = re.search(pattern, line).group(1)
@@ -84,7 +68,6 @@ def loadtomatrix(file, n, mode="BLAST"):
 
 
 def is_symmetric(a, rtol=1e-05, atol=1e-08):
-    #return np.allclose(a, a.T, rtol=rtol, atol=atol
     a = torch.from_numpy(a)
     return bool(torch.all(a.T == a))
 
@@ -107,8 +90,6 @@ def truncatedSimilarityMatrix_SVD(matrix, dim):
 def train_test_split_sim(sim_matrix,y, test_size):
   train_idx = int(len(sim_matrix[0])*(1-test_size))
   X_train, X_test, y_train, y_test = train_test_split(sim_matrix, y, test_size=test_size)
-  #test_idx = len(sim_matrix[0])*(split)
-  #print(train_idx)
   return X_train[:,:train_idx],X_test[:,:train_idx], y_train, y_test 
 
 def make_psd(matrix):
@@ -137,10 +118,6 @@ def esm1b_preprocessing(sequences: SeqIO):
   return [ (str(sequence.id),str(sequence.seq)) for sequence in sequences]
 
 def dis2sim(dis):
-    """
-    :param dis: np.ndarray
-    :return:
-    """
     (n, m) = dis.shape
     if n != m:
         raise Exception('The dissimilarity matrix must be square.')
@@ -149,18 +126,9 @@ def dis2sim(dis):
     if not is_symmetric(dis):
         raise Exception('The dissimilarity matrix must be symmetric.')
 
-    """
-    Matlab Code:
-    [N,N_]=size(Dis);
-    J = eye(N) - repmat(1/N,N,N);
-    Sim = -0.5 * J * Dis * J;
-    Sim=(Sim+Sim')/2;
-    """
-
-    J = np.eye(n) - np.tile(1 / n, (n, n)) # np.tile: "Construct an array by repeating A the number of times given by reps."
-    sim = -0.5 * J @ dis @ J
+    j = np.eye(n) - np.tile(1 / n, (n, n))
+    sim = -0.5 * j @ dis @ j
     sim = 0.5 * (sim + sim.T)
-
     return sim
 
 def sim2dis(sim):
@@ -212,63 +180,18 @@ class knn(object):
     return pred/y_test.shape[0]
 
   def score_step(self,test_row_idx):
-    distances = []
-    for train_row in self.x_train:
-      distances.append(np.linalg.norm(train_row-self.x_test[test_row_idx]))
-    top_n = np.asarray(distances).argsort()[:self.neighbors]
-    labels = self.y_train[top_n]
-    #wta
-    pred = np.bincount(labels.astype(int)).argmax()
-    #print(pred)
-    #print(self.y_test[test_row_idx])
-    return int(float(pred) == self.y_test[test_row_idx])
-
-  def multi_score(self, x_test, y_test):
-      self.y_test=y_test
-      self.x_test=x_test
-      a_pool = multiprocessing.Pool()
-      result = a_pool.map(self.score_step, range(len(x_test)))
-      print(np.sum(result)/self.y_test.shape[0])
-
-class knn_dict(object):
-  def __init__(self,x_train, y_train, neighbors=3):
-      super().__init__()
-      self.x_train = x_train 
-      self.y_train = y_train
-      self.neighbors = neighbors
-
-  def score(self, x_test, y_test):
-    acc = 0
-
-    for idx,test_row in enumerate(x_test):
-      distances = []
-      for train_row in self.x_train:
-        distances.append(np.linalg.norm(train_row-test_row))
-      top_n = np.asarray(distances).argsort()[:self.neighbors]
-      labels = self.y_train[top_n]
-      #wta
-      pred = np.bincount(labels.astype(int)).argmax()
-      if pred == y_test[idx]: acc +=1
-    return pred/y_test.shape[0]
-
-  def score_step(self,test_row_idx):
     distances = {}#[]
     for train_sequence_id, train_sequence_vec in self.x_train.items():
-      #distances.append(np.linalg.norm(train_row-self.x_test[test_row_idx]))
       distances[train_sequence_id] = np.linalg.norm(train_sequence_vec-self.x_test[test_row_idx])
-    #top_n = np.asarray(distances).argsort()[:self.neighbors]
     top_n = sorted(distances, key=distances.get)[:self.neighbors]
     labels = [int(self.y_train[id]) for id in top_n]
     #wta
     pred = np.bincount(labels).argmax()
-    #print(pred)
-    #print(self.y_test[test_row_idx])
     return int(float(pred) == self.y_test[test_row_idx])
 
   def multi_score(self, x_test, y_test):
     self.y_test=y_test
     self.x_test=x_test
-    #result = [self.score_step(key) for key in x_test.keys()]
     a_pool = multiprocessing.Pool()
     result = a_pool.map(self.score_step, x_test.keys())
     return np.sum(result)/len(self.y_test)

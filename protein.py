@@ -21,9 +21,9 @@ from utils import *
 
 input_file = "example.fasta"
 output_file = "example.txt"
-train_file = "train.fasta"
+train_file = "data/train.fasta"
 train_output_file = "train.txt"
-test_file = "test.fasta"
+test_file = "data/test.fasta"
 test_output_file = "test.txt"
 examples_per_class = 1000
 top_classes = 15

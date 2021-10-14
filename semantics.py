@@ -1,14 +1,11 @@
-from utils import knn_dict
+from utils import knn
 import os
 import pickle
 
-for filename in os.listdir("vecs"): 
-    #print(filename)
+for filename in os.listdir("vecs"):
     embedded_x_train_dict, y_train, embedded_x_test_dict, y_test = pickle.load(open("vecs/{}".format(filename),"rb"))
-    #print(embedded_x_train_dict)
-    #print(y_train)
     # Calculate accuracy scores
-    knearestneighbors = knn_dict(embedded_x_train_dict, y_train) # Save train values for comparison
+    knearestneighbors = knn(embedded_x_train_dict, y_train) # Save train values for comparison
     acc = knearestneighbors.multi_score(embedded_x_test_dict, y_test) # Calculate the distance from the test samles to all train samples + winner-takes-all rule for classification
     print("Embedding",filename[:-2],"classification accuracy",acc,"%")
 

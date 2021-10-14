@@ -137,10 +137,8 @@ trained_models
 .vscode
 __MACOSX
 data/uniprot_sprot.fasta
-temp
+temp/*
 tsne_30
-vecs
-vecs_other
 tsne
 dataset_metrics
 pca
