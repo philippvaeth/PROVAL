@@ -1,4 +1,4 @@
-# Code repository for the Master thesis "Comparison of Protein Sequence Embeddings to Classify Molecular Functions" by Philipp Väth
+# Code repository "Comparison of Protein Sequence Embeddings to Classify Molecular Functions"
 1. Install requirements:
     * Conda environment: 
         * conda env create -f environment.yml
@@ -24,3 +24,10 @@
 4. Run semantics.py for the classification results (Table 4.2)
 5. Run clustering.py for the clustering results (Figure 4.1)
 6. Run eigenspectrum_plot for the information theory results (Figure 4.2)
+
+# Extension to other embedding algorithms
+1. Load pretrained model
+2. Add function to embedding_utils.py, which takes the train and test sequences as lists of Bio sequences (see read_fasta() in utils.py) and returns the vectors in a dictionary of the form id(String):vector(NumPy array)
+3. Add approach to embedding list (embeddings.py, line 17)
+4. Add embedding function call to the if/elif statements in the simiar form
+5. Run embeddings.py and the respective comparison scripts
