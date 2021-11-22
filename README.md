@@ -31,3 +31,6 @@
 3. Add approach to embedding list (embeddings.py, line 17)
 4. Add embedding function call to the if/elif statements in the simiar form
 5. Run embeddings.py and the respective comparison scripts
+
+
+FTP Repo of Data https://ftp.uniprot.org/pub/databases/uniprot/previous_major_releases/release-2021_02/ 
