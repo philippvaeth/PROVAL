@@ -1,0 +1,4 @@
+-r requirements.txt
+biovec
+fair-esm
+-e git+https://github.com/amyxlu/CPCProt.git#egg=CPCProt

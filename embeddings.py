@@ -14,7 +14,7 @@ test = read_fasta("data/test.fasta")
 d = 100
 sw_alignment_train, sw_alignment_test = swTrainTest(train, test, args.sw_alignment)
 
-for embedding_type in ["sw_dissimrep", "sw_complex", "protvec", "esm1b_tsvd", "cpcprot_cfinal_tsvd", "cpcprot_zmean_tsvd"]:
+for embedding_type in ["sw_dissimrep", "protvec", "esm1b_tsvd", "cpcprot_cfinal_tsvd", "cpcprot_zmean_tsvd"]:
    if not os.path.isfile("vecs/{}.p".format(embedding_type)):  
         t = time.time()
         y_train = {str(s.id):float(s.description) for s in train}
