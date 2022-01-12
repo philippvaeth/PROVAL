@@ -1,37 +1,11 @@
 # Code repository "Comparison of Protein Sequence Embeddings to Classify Molecular Functions"
-<!-- 1. Install requirements:
-    * Conda environment: 
-        * conda env create -f environment.yml
-    * Smith-Waterman SSW Library:
-        * Download the software from https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.
-        * cd src
-        * make
-    * ProtVec:
-        * pip install biovec
-    * biLSTM:
-        (Google Colab: https://colab.research.google.com/drive/1awz63tkC8u2RHF25n6BElcq5C_XS5wSt?usp=sharing)
-        or use the provided "bilstm_vecs_proj.p" vectors
-    * ESM-1b: 
-        * pip install fair-esm
-    * CPCProt:
-        * git clone https://github.com/amyxlu/CPCProt.git
-        * cd CPCProt
-        * pip install -e .
-    * Create directories: 
-        * mkdir -p dataset_metrics eigenspectrum temp tsne vecs
-2. Run dataset_metrics.py for the data set plots (Figure 3.1)
-3. Run embeddings.py to obtain the vectors 
-4. Run semantics.py for the classification results (Table 4.2)
-5. Run clustering.py for the clustering results (Figure 4.1)
-6. Run eigenspectrum_plot for the information theory results (Figure 4.2) -->
 ## PROVAL Setup
 1. (optional) Use virtual environment, e.g.:  
 `conda create --name proval`  
-`conda activate proval`
+`conda activate proval`  
+`conda install pip`  
 2. Install (framework) requirements:  
 `pip install -r requirements.txt`
-<!-- 3. Create directories 
-`mkdir -p dataset_metrics eigenspectrum temp tsne vecs` -->
 ---
 
 ## Extension to Other Embedding Algorithms
@@ -61,10 +35,21 @@ _Note, the extraction of the vectors and the results might not be fully determin
 <details>
   <summary>Data set (optional)</summary>
 
-  1. A numbered
-  2. list
-     * With some
-     * Sub bullets
+
+  Steps to reproduce the _test.fasta_ and _train.fasta_ files in the _data_ folder:
+  1. Download the full SwissProt data set (release 02/2021):  
+  https://ftp.uniprot.org/pub/databases/uniprot/previous_major_releases/release-2021_02/ 
+  2. Select the sequence IDs, the sequence strings and the molecular function information ('GO:xxxxxx' terms)
+  3. Discard all sequences with more than one molecular function (to reduce the complexity of the experiments)
+  4. Select 1000 random sequences for each of the most frequent 15 molecular functions (=15,000 sequences)
+  5. Randomly split the sequences in training and test sets (70:30)
+  6. Save the sequences in the _.fasta_ format, compare the _test.fasta_ and _train.fasta_ files in the _data_ folder:
+     >\<Sequence ID\> \[\<GO-ID\>\]  
+     \<Sequence\>  
+     \<Sequence ID\> \[\<GO-ID\>\]  
+     \<Sequence\>  
+     ...
+    
 </details>
 
 <details>
@@ -89,6 +74,4 @@ _Note, the extraction of the vectors and the results might not be fully determin
    * Run visualization.py for the visualization results (Figure 7)
    * Run eigenspectrum_plot.py for the information theory results (Figure 8)
 </details>
-FTP Repo of Data https://ftp.uniprot.org/pub/databases/uniprot/previous_major_releases/release-2021_02/ 
-
 ---
