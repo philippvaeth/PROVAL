@@ -3,6 +3,10 @@ import numpy as np
 from collections import Counter, OrderedDict
 import matplotlib.pyplot as plt
 from biovec.utils import split_ngrams
+import os 
+
+if not os.path.exists('dataset_metrics'):
+    os.makedirs('dataset_metrics')
 
 # Load data
 train = read_fasta("data/train.fasta")

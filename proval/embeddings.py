@@ -12,6 +12,9 @@ parser.add_argument(
     help='full: n+m x n+m matrix / traintest: nxn, mxn matrices')
 args = parser.parse_args()
 
+if not os.path.exists('temp'):
+    os.makedirs('temp')
+
 train = read_fasta("data/train.fasta")
 test = read_fasta("data/test.fasta")
 d = 100

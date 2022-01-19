@@ -8,7 +8,7 @@ from sw_alignment import alignSmithWaterman
 
 def swTrainTest(train, test, sw_alignment):
     if sw_alignment == "full":
-        # Option 1: full alignment and the test / train split at suggested in Figure 2.2
+        # Option 1: full alignment and the test / train split
         if not os.path.isfile("data/sw_alignment_all.pkl"):
             alignSmithWaterman(sw_alignment)
         sw_alignment_all = pickle.load(open("data/sw_alignment_all.pkl",

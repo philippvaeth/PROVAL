@@ -1,5 +1,5 @@
-# Proval: Evaluation Framework for Protein Sequence Embedding
-### Code submission of paper 'Comparison of Protein Sequence Embeddings to Classify Molecular Functions'
+# PROVAL: Evaluation Framework for Protein Sequence Embeddings
+### Code submission of paper 'PROVAL: A Framework for Comparison of Protein Sequence Embeddings'
 <br>
 
 ## PROVAL Setup
@@ -60,7 +60,9 @@ _Note, the extraction of the vectors and the results might not be fully determin
 
 <details>
   <summary>Embedding methods</summary>
-  1. Run <b>embeddings.py<b> to obtain the vectors  
+  
+  1. Install the Smith-Watermann Alignment 
+  2. Run <b>embeddings.py<b> to obtain the vectors  
 </details>
 
 <details>
