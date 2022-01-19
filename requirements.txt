@@ -5,3 +5,9 @@ scikit-learn==0.24.2
 matplotlib
 lxml
 requests
+
+
+-r requirements.txt
+biovec
+fair-esm
+-e git+https://github.com/amyxlu/CPCProt.git#egg=CPCProt
