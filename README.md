@@ -1,6 +1,5 @@
 # Proval: Evaluation Framework for Protein Sequence Embedding
-## Code submission of paper 'Comparison of Protein Sequence Embeddings to Classify Molecular Functions'
-<br>
+### Code submission of paper 'Comparison of Protein Sequence Embeddings to Classify Molecular Functions'
 <br>
 
 ## PROVAL Setup
