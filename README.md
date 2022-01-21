@@ -5,7 +5,7 @@
 ## PROVAL Setup
 1. We recommend using a new Conda enviroment!
 2. Install Proval Framework
-``` pip install proval ```
+``` pip install -e .[all] ```
 3. (Optional) Install Smith-Watermann Alignment:
   ```console
   git clone https://github.com/mengyao/Complete-Striped-Smith-Waterman-Library.git
