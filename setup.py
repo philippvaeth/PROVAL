@@ -19,7 +19,7 @@ setuptools.setup(
     license="MIT",
     url="https://github.com/philippvaeth/PROVAL",
     packages=setuptools.find_packages(include=['proval', 'proval.*']),
-    python_requires=">=3.6",
+    python_requires=">=3.6, <=3.8.12",
     install_requires=required_packages,
     package_data={"": ["README.md", "LICENSE"]},
     classifiers=[

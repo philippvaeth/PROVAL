@@ -3,15 +3,15 @@ import os
 import pickle
 
 for filename in os.listdir("vecs"):
-    embedded_x_train_dict, y_train, embedded_x_test_dict, y_test = pickle.load(
-        open("vecs/{}".format(filename), "rb"))
-    # Calculate accuracy scores
-    knearestneighbors = knn(embedded_x_train_dict,
-                            y_train)  # Save train values for comparison
-    acc = knearestneighbors.multi_score(
-        embedded_x_test_dict, y_test
-    )  # Calculate the distance from the test samles to all train samples + winner-takes-all rule for classification
-    print("Embedding", filename[:-2], "classification accuracy", acc, "%")
+    if filename.endswith(".p"):
+        embedded_x_train_dict, y_train, embedded_x_test_dict, y_test = pickle.load(open("vecs/{}".format(filename), "rb"))
+        # Calculate accuracy scores
+        knearestneighbors = knn(embedded_x_train_dict,
+                                y_train)  # Save train values for comparison
+        acc = knearestneighbors.multi_score(
+            embedded_x_test_dict, y_test
+        )  # Calculate the distance from the test samles to all train samples + winner-takes-all rule for classification
+        print("Embedding", filename[:-2], "classification accuracy", acc, "%")
 
 # Results as reported:
 # Embedding sw_complex classification accuracy 0.866 %
