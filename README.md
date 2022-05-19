@@ -1,5 +1,6 @@
 # PROVAL: Evaluation Framework for Protein Sequence Embeddings
 ### Code submission of paper 'PROVAL: A Framework for Comparison of Protein Sequence Embeddings'
+[![DOI:10.1016](http://img.shields.io/badge/DOI-10.1016/j.jcmds.2022.100044-E37633.svg)](https://doi.org/10.1016/j.jcmds.2022.100044)
 <br>
 
 ## PROVAL Setup
@@ -75,5 +76,17 @@ _Note, the extraction of the vectors and the results might not be fully determin
 </details>
   
 ---  
-  
+## Citation  
+```bibtex
+ @article{VATH2022100044,
+title = {PROVAL: A framework for comparison of protein sequence embeddings},
+journal = {Journal of Computational Mathematics and Data Science},
+pages = {100044},
+year = {2022},
+issn = {2772-4158},
+doi = {https://doi.org/10.1016/j.jcmds.2022.100044},
+url = {https://www.sciencedirect.com/science/article/pii/S2772415822000128},
+author = {Philipp Väth and Maximilian Münch and Christoph Raab and F.-M. Schleif},
+}
+```
   
